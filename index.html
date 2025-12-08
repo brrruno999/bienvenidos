@@ -2,10 +2,47 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Redireccionando...</title>
-  <meta http-equiv="refresh" content="0; url=https://api.whatsapp.com/send?phone=5492235781997&text=Hola%20quiero%20info">
+  <title>Conectando con WhatsApp...</title>
+  <meta http-equiv="refresh" content="3; url=https://api.whatsapp.com/send?phone=5492235781997&text=Hola%20quiero%20info">
+  <style>
+    body {
+      background-color: #d4f8d4;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #2e7d32;
+    }
+
+    .loader {
+      border: 6px solid #c8e6c9;
+      border-top: 6px solid #2e7d32;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .message {
+      font-size: 1.2em;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <p>Redireccionando a WhatsApp... Si no ocurre automáticamente, <a href="https://api.whatsapp.com/send?phone=5492235781997&text=Hola%20quiero%20info">haz clic aquí</a>.</p>
+  <div class="loader"></div>
+  <div class="message">
+    <p><strong>Conectando con WhatsApp...</strong></p>
+    <p>Te redirigiremos en un momento</p>
+  </div>
 </body>
 </html>
