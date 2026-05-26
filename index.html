@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRM Outreach</title>
+<title>CRM Prospeccion</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -306,7 +306,7 @@
 
 <!-- Header -->
 <div class="header">
-  <h1>CRM <span>Outreach</span></h1>
+  <h1>CRM <span>Prospeccion</span></h1>
   <div class="header-actions">
     <button class="btn-ghost btn-sm" onclick="exportData()">Exportar</button>
     <button class="btn-danger btn-sm" onclick="resetAll()">Resetear todo</button>
@@ -344,7 +344,7 @@
       <div class="panel-body">
         <div id="drop-zone" onclick="document.getElementById('file-input').click()">
           <p><strong>Clic o arrastrá un archivo aquí</strong></p>
-          <small>Acepta .xlsx, .xls o .csv</small>
+          <small>Acepta .xlsx</small>
         </div>
         <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
