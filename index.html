@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM Outreach</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3352;
+    --accent: #4f8ef7;
+    --accent-dim: #1e3a6e;
+    --green: #22c55e;
+    --green-dim: #14532d;
+    --green-bg: #0d2b1a;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Buttons ── */
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    transition: opacity .15s, transform .1s;
+  }
+  button:active { transform: scale(.97); }
+  button:hover { opacity: .88; }
+
+  .btn-primary   { background: var(--accent); color: #fff; }
+  .btn-success   { background: var(--green); color: #fff; }
+  .btn-danger    { background: var(--red); color: #fff; }
+  .btn-ghost     { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-sm        { padding: 5px 10px; font-size: 12px; }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .stat-label { color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .stat-value { font-size: 32px; font-weight: 700; line-height: 1; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+
+  /* ── Two-column layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ── Panel ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .panel-body { padding: 16px 18px; }
+
+  /* ── Search / filter bar ── */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .toolbar input[type="text"] {
+    flex: 1;
+    min-width: 180px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 7px 12px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .toolbar input[type="text"]::placeholder { color: var(--text-dim); }
+  .toolbar input[type="text"]:focus { outline: 2px solid var(--accent); }
+  .filter-tabs { display: flex; gap: 4px; }
+  .tab {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    transition: all .15s;
+  }
+  .tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  /* ── Table ── */
+  .table-wrap {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--surface2);
+    padding: 9px 10px;
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  thead th:first-child { width: 36px; text-align: center; }
+  thead th.col-date   { width: 100px; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.contacted { background: var(--green-bg); }
+  tbody tr.contacted:hover { background: #0f3320; }
+
+  td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  td:first-child { text-align: center; }
+
+  /* checkbox styling */
+  input[type="checkbox"] {
+    width: 18px; height: 18px;
+    cursor: pointer;
+    accent-color: var(--green);
+  }
+
+  .date-badge {
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-dim);
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; margin-bottom: 4px; }
+  .empty-state small { font-size: 12px; }
+
+  /* ── Daily log ── */
+  .day-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .day-entry:last-child { border-bottom: none; }
+  .day-date { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .day-count {
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+  }
+  .no-log { color: var(--text-dim); font-size: 13px; text-align: center; padding: 20px 0; }
+
+  /* ── Upload drop zone ── */
+  #drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .2s;
+    margin-bottom: 12px;
+  }
+  #drop-zone.drag-over { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+  #file-input { display: none; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all .25s;
+    z-index: 999;
+    max-width: 320px;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.green { border-color: var(--green); color: var(--green); }
+  #toast.red   { border-color: var(--red);   color: var(--red); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>CRM <span>Outreach</span></h1>
+  <div class="header-actions">
+    <button class="btn-ghost btn-sm" onclick="exportData()">Exportar</button>
+    <button class="btn-danger btn-sm" onclick="resetAll()">Resetear todo</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Total cargados</div>
+    <div class="stat-value accent" id="stat-total">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Contactados</div>
+    <div class="stat-value green" id="stat-contacted">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Hoy</div>
+    <div class="stat-value yellow" id="stat-today">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pendientes</div>
+    <div class="stat-value" id="stat-pending">0</div>
+  </div>
+</div>
+
+<!-- Main layout -->
+<div class="layout">
+
+  <!-- Left: table -->
+  <div>
+    <!-- Upload panel (shown when no data) -->
+    <div id="upload-panel" class="panel" style="margin-bottom:20px;">
+      <div class="panel-header">Importar lista</div>
+      <div class="panel-body">
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <p><strong>Clic o arrastrá un archivo aquí</strong></p>
+          <small>Acepta .xlsx, .xls o .csv</small>
+        </div>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-primary btn-sm" onclick="document.getElementById('file-input').click()">
+            Cargar archivo
+          </button>
+          <button class="btn-ghost btn-sm" onclick="loadDemo()">
+            Demo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span id="table-title">Contactos</span>
+        <button class="btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
+          Reemplazar lista
+        </button>
+      </div>
+      <div class="panel-body">
+        <div class="toolbar">
+          <input type="text" id="search-input" placeholder="Buscar..." oninput="renderTable()">
+          <div class="filter-tabs">
+            <div class="tab active" data-filter="all"    onclick="setFilter('all')">Todos</div>
+            <div class="tab"        data-filter="pending" onclick="setFilter('pending')">Pendientes</div>
+            <div class="tab"        data-filter="done"   onclick="setFilter('done')">Contactados</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="crm-table">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+          <p>No hay registros que coincidan</p>
+          <small>Probá cambiar el filtro o la búsqueda</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: daily log -->
+  <div class="panel">
+    <div class="panel-header">Registro diario</div>
+    <div class="panel-body" id="daily-log">
+      <div class="no-log">Sin actividad aún</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let rows    = [];   // [{...data, _id, _contacted, _contactedDate}]
+let columns = [];   // string[]
+let filter  = 'all';
+
+const STORAGE_KEY = 'crm_outreach_v1';
+
+// ── Persistence ────────────────────────────────────────────────────────
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, columns }));
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    rows    = data.rows    || [];
+    columns = data.columns || [];
+    renderAll();
+  } catch(e) { console.warn('Error loading storage', e); }
+}
+
+// ── File handling ──────────────────────────────────────────────────────
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  readFile(file);
+  e.target.value = '';
+}
+
+function readFile(file) {
+  const reader = new FileReader();
+  const isCsv = file.name.toLowerCase().endsWith('.csv');
+
+  reader.onload = function(e) {
+    try {
+      let wb;
+      if (isCsv) {
+        wb = XLSX.read(e.target.result, { type: 'string' });
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      }
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (!json.length) { toast('El archivo está vacío', 'red'); return; }
+
+      columns = Object.keys(json[0]);
+      rows = json.map((r, i) => ({
+        ...r,
+        _id: Date.now() + i,
+        _contacted: false,
+        _contactedDate: null
+      }));
+      save();
+      renderAll();
+      toast(`${rows.length} registros cargados`, 'green');
+    } catch(err) {
+      console.error(err);
+      toast('Error al leer el archivo', 'red');
+    }
+  };
+
+  if (isCsv) {
+    reader.readAsText(file, 'UTF-8');
+  } else {
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+// Drop zone
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', ()  => dz.classList.remove('drag-over'));
+dz.addEventListener('drop',      e  => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+// ── Demo data ──────────────────────────────────────────────────────────
+function loadDemo() {
+  columns = ['Nombre', 'Clínica', 'Instagram', 'Ciudad'];
+  const names = ['Dra. García','Dra. Rodríguez','Dra. López','Dr. Martínez','Dra. Sánchez',
+                 'Dra. Pérez','Dr. González','Dra. Fernández','Dra. Torres','Dr. Ramírez',
+                 'Dra. Flores','Dra. Reyes','Dr. Morales','Dra. Jiménez','Dra. Castro'];
+  const clinics = ['Estética Vital','Body & Skin','Clínica Lumière','Premium Aesthetic',
+                   'Renova Estética','Skin Lab','Facial Studio','Bodymind','Glow Clinic','Eterna'];
+  const cities  = ['Buenos Aires','Córdoba','Rosario','Mendoza','La Plata','Tucumán'];
+  rows = Array.from({length: 30}, (_, i) => ({
+    Nombre:    names[i % names.length],
+    Clínica:   clinics[i % clinics.length],
+    Instagram: '@' + clinics[i % clinics.length].toLowerCase().replace(/\s/g,''),
+    Ciudad:    cities[i % cities.length],
+    _id: Date.now() + i,
+    _contacted: false,
+    _contactedDate: null
+  }));
+  save();
+  renderAll();
+  toast('Datos de prueba cargados', 'green');
+}
+
+// ── Toggle contact ─────────────────────────────────────────────────────
+function toggleContact(id) {
+  const row = rows.find(r => r._id === id);
+  if (!row) return;
+  row._contacted = !row._contacted;
+  row._contactedDate = row._contacted ? todayStr() : null;
+  save();
+  renderAll();
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// ── Filters & search ───────────────────────────────────────────────────
+function setFilter(f) {
+  filter = f;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.filter === f);
+  });
+  renderTable();
+}
+
+function filteredRows() {
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  return rows.filter(r => {
+    if (filter === 'pending' && r._contacted) return false;
+    if (filter === 'done'    && !r._contacted) return false;
+    if (!q) return true;
+    return columns.some(c => String(r[c]).toLowerCase().includes(q));
+  });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────
+function renderAll() {
+  renderStats();
+  renderTable();
+  renderDailyLog();
+}
+
+function renderStats() {
+  const total     = rows.length;
+  const contacted = rows.filter(r => r._contacted).length;
+  const today     = rows.filter(r => r._contactedDate === todayStr()).length;
+
+  document.getElementById('stat-total').textContent     = total;
+  document.getElementById('stat-contacted').textContent = contacted;
+  document.getElementById('stat-today').textContent     = today;
+  document.getElementById('stat-pending').textContent   = total - contacted;
+
+  const title = document.getElementById('table-title');
+  title.textContent = total ? `Contactos (${total})` : 'Contactos';
+}
+
+function renderTable() {
+  const head = document.getElementById('table-head');
+  const body = document.getElementById('table-body');
+  const empty = document.getElementById('empty-state');
+  const tableEl = document.getElementById('crm-table');
+
+  if (!columns.length) {
+    tableEl.style.display = 'none';
+    empty.style.display = 'none';
+    return;
+  }
+
+  // Header
+  head.innerHTML = '<tr>' +
+    '<th title="Contactado">✓</th>' +
+    columns.map(c => `<th>${esc(c)}</th>`).join('') +
+    '<th class="col-date">Fecha contacto</th>' +
+    '</tr>';
+
+  const visible = filteredRows();
+
+  if (!visible.length) {
+    tableEl.style.display = rows.length ? 'none' : 'table';
+    empty.style.display = rows.length ? 'block' : 'none';
+    body.innerHTML = '';
+    return;
+  }
+
+  tableEl.style.display = 'table';
+  empty.style.display   = 'none';
+
+  body.innerHTML = visible.map(row => `
+    <tr class="${row._contacted ? 'contacted' : ''}" id="row-${row._id}">
+      <td>
+        <input type="checkbox"
+          ${row._contacted ? 'checked' : ''}
+          onchange="toggleContact(${row._id})"
+          title="${row._contacted ? 'Marcar como pendiente' : 'Marcar como contactado'}">
+      </td>
+      ${columns.map(c => `<td title="${esc(String(row[c]))}">${esc(String(row[c]))}</td>`).join('')}
+      <td>
+        ${row._contactedDate
+          ? `<span class="date-badge">${row._contactedDate}</span>`
+          : '<span style="color:var(--text-dim);font-size:12px;">—</span>'
+        }
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderDailyLog() {
+  const log = document.getElementById('daily-log');
+  const contacted = rows.filter(r => r._contacted && r._contactedDate);
+
+  if (!contacted.length) {
+    log.innerHTML = '<div class="no-log">Sin actividad aún</div>';
+    return;
+  }
+
+  // Count by date
+  const counts = {};
+  contacted.forEach(r => {
+    counts[r._contactedDate] = (counts[r._contactedDate] || 0) + 1;
+  });
+
+  // Sort dates descending
+  const sorted = Object.entries(counts).sort((a, b) => {
+    const parse = s => { const [d,m,y] = s.split('/'); return new Date(y,m-1,d); };
+    return parse(b[0]) - parse(a[0]);
+  });
+
+  log.innerHTML = sorted.map(([date, count]) => `
+    <div class="day-entry">
+      <span class="day-date">${date}</span>
+      <span class="day-count">${count} contacto${count !== 1 ? 's' : ''}</span>
+    </div>
+  `).join('');
+}
+
+// ── Export ─────────────────────────────────────────────────────────────
+function exportData() {
+  if (!rows.length) { toast('No hay datos para exportar', 'red'); return; }
+
+  const exportCols = [...columns, 'Contactado', 'Fecha contacto'];
+  const data = rows.map(r => {
+    const obj = {};
+    columns.forEach(c => { obj[c] = r[c]; });
+    obj['Contactado']     = r._contacted ? 'Sí' : 'No';
+    obj['Fecha contacto'] = r._contactedDate || '';
+    return obj;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(data, { header: exportCols });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contactos');
+
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `crm_outreach_${date}.xlsx`);
+  toast('Exportado correctamente', 'green');
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────
+function resetAll() {
+  const n = rows.filter(r => r._contacted).length;
+  const msg = n
+    ? `¿Seguro? Tenés ${rows.length} registros (${n} contactados). Se borrará todo.`
+    : `¿Seguro? Se borrarán los ${rows.length} registros.`;
+  if (!confirm(msg)) return;
+  rows = []; columns = [];
+  localStorage.removeItem(STORAGE_KEY);
+  renderAll();
+  toast('Datos reseteados', '');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
